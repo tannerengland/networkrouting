@@ -39,8 +39,8 @@ class NetworkRoutingSolver:
             pq = PriorityQueueBinaryHeap
         else:
             pq = PriorityQueueArray
-        pq.make_queue(self)
-        dijkstra(pq)
+        pq.make_queue()
+        Dijkstra(pq)
 
 
 
@@ -51,7 +51,7 @@ class NetworkRoutingSolver:
         t2 = time.time()
         return (t2-t1)
 
-def dijkstra(priorityQueue):
+def Dijkstra(priorityQueue):
 
 
 
@@ -64,6 +64,7 @@ class PriorityQueueArray:
 
     def insert(self, node, dist):
         self.queue[node] = dist
+        # self.queue[node,dist]
 
     def decrease_dist(self, node, dist):
         if node in self.queue:
@@ -81,16 +82,29 @@ class PriorityQueueArray:
         self.queue.pop(min_node)
         return min_node
 
-    def make_queue(self, solver: NetworkRoutingSolver):
-        for node in solver.network:
-            self.queue[node] = (float('inf'))
+    # def make_queue(self, solver: NetworkRoutingSolver):
+    #     for node in solver.network:
+    #         self.queue[node] = (float('inf'))
+    # def make_queue(self, nodes):
+    #     for node in nodes:
+    #         self.queue[node] = (float('inf'))
+    def make_queue(self, nodes):
+        self.queue = {key: float('inf') for key, _ in nodes}
+        # self.queue = dict(nodes)
 
 class PriorityQueueBinaryHeap:
     def __init__(self):
         self.queue = []
+        self.indices = {}
+
+    def swap(self, node):
+
+    def bubbleUp(self, curr_index):
+
 
     def insert(self, node, dist):
         self.queue.append([node, dist])
+
         curr_index = len(self.queue) - 1
         while curr_index > 0:
             parent = self.queue[((curr_index+1)//2)-1]
@@ -104,9 +118,9 @@ class PriorityQueueBinaryHeap:
                 break
 
     def decrease_dist(self, node, dist):
-        if node in self.queue:
-            if dist < self.queue[node]:
-                self.queue[node] = dist
+        # if node in self.queue:
+        if dist < self.queue[node]:
+            self.queue[node] = dist
         curr_index = len(self.queue[node]) - 1
         while curr_index > 0:
             parent = self.queue[((curr_index+1)//2)-1]
@@ -119,10 +133,45 @@ class PriorityQueueBinaryHeap:
             else:
                 break
 
+    def delete_min(self):
+
+        # swaps top and bottom of tree and pops off min
+        min_node = self.queue[0].pop()
+        self.queue[0], self.queue[len(self.queue) - 1] = self.queue[len(self.queue) - 1], self.queue[0]
+
+        # bubble down to correct place
+        curr_index = 0
+        L = self.queue[((curr_index + 1) * 2) - 1]
+        R = self.queue[((curr_index + 1) * 2) + 1 - 1]
+        while (self.queue[curr_index][1] >= L[1]) and (self.queue[curr_index][1] >= R[1]):
+            curr_node = self.queue[curr_index]
+            parent = self.queue[((curr_index+1)//2)-1]
+            if L[1] < curr_node[1]:
+                if L[1] < R[1]:
+                    temp = L
+                    L = curr_node
+                    curr_node = temp
+                    curr_index = ((curr_index+1)*2)-1
+            elif R[1] < curr_node[1]:
+                if L[1] > R[1]:
+                    temp = R
+                    R = curr_node
+                    curr_node = temp
+                    curr_index = ((curr_index+1)*2)+1-1
+            elif ((R and L) >= curr_node) and (parent <= curr_node):
+                break
+            L = self.queue[((curr_index+1)*2)-1]
+            R = self.queue[((curr_index+1)*2)+1-1]
+
+        return min_node
+
+    def make_queue(self, nodes):
+        self.queue = {key: float('inf') for key, _ in nodes}
 
 
 
-# pq = PriorityQueueArray()
+
+pq = PriorityQueueArray()
 # pq.insert('A', 2)
 # pq.insert('B', 4)
 # pq.insert('C', 2)
@@ -136,6 +185,6 @@ class PriorityQueueBinaryHeap:
 # print(f"Deleted minimum value: ({min_node})")
 # print("Updated Priority Queue:", pq.queue)
 #
-# elements = [("D", 1), ("E", 8), ("F", 4)]
-# pq.make_queue(elements)
-# print("Priority Queue after make_queue:", pq.queue)
+elements = [("D", 1), ("E", 8), ("F", 4)]
+pq.make_queue(elements)
+print("Priority Queue after make_queue:", pq.queue)
