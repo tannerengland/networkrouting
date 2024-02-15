@@ -89,89 +89,123 @@ class PriorityQueueArray:
     #     for node in nodes:
     #         self.queue[node] = (float('inf'))
     def make_queue(self, nodes):
-        self.queue = {key: float('inf') for key, _ in nodes}
+        # self.queue = {key: float('inf') for key, _ in nodes}
         # self.queue = dict(nodes)
+        for node in nodes:
+            self.insert(node, float('inf'))
 
 class PriorityQueueBinaryHeap:
     def __init__(self):
+        # store nodes in order
         self.queue = []
+        # stores distances with node
+        self.distances = {}
+        # stores indices of pq with node
         self.indices = {}
 
-    def swap(self, node):
+    # def swap(self, parent, child):
+    #     parentIndex = self.indices.get(parent)
+    #     childIndex = self.indices.get(child)
+    #     self.indices[parent] = childIndex
+    #     self.indices[child] = parentIndex
+    #     tempParentNode = self.queue[parentIndex]
+    #     self.queue[parentIndex] = self.queue[childIndex]
+    #     self.queue[childIndex] = tempParentNode
+
+    def swap(self, node1, node2):
+        node1Index = self.indices.get(node1)
+        node2Index = self.indices.get(node2)
+        self.indices[node1] = node2Index
+        self.indices[node2] = node1Index
+        tempNode = self.queue[node1Index]
+        self.queue[node1Index] = self.queue[node2Index]
+        self.queue[node2Index] = tempNode
+
+    def getLChildIndex(self, index):
+        return ((index + 1) * 2) - 1
+
+    def getRChildIndex(self, index):
+        return ((index + 1) * 2) + 1 - 1
+
+    def getParentIndex(self, index):
+        return ((index+1)//2)-1
 
     def bubbleUp(self, curr_index):
+        while curr_index > 0:
+            parent = self.queue[self.getParentIndex(curr_index)]
+            curr_node = self.queue[curr_index]
+            if self.distances[curr_node] < self.distances[parent]:
+                self.swap(parent, curr_node)
+                curr_index = self.getParentIndex(curr_index)
+            else:
+                break
+
+    def bubbleDown(self):
+        curr_index = 0
+        curr_node = self.queue[curr_index]
+        if len(self.queue) < self.getLChildIndex(curr_index):
+            return
+        L = self.queue[self.getLChildIndex(curr_index)]
+        R = self.queue[self.getRChildIndex(curr_index)]
+        while True:
+            if R is not None:
+                if self.distances[L] < self.distances[curr_node]:
+                    if self.distances[L] < self.distances[R]:
+                        self.swap(L, curr_node)
+                        curr_index = self.getLChildIndex(curr_index)
+                elif self.distances[R] < self.distances[curr_node]:
+                    if self.distances[L] > self.distances[R]:
+                        self.swap(R, curr_node)
+                        curr_index = self.getRChildIndex(curr_index)
+                elif (self.distances[curr_node] <= self.distances[L]) and (self.distances[curr_node] <= self.distances[R]):
+                    break
+                curr_node = self.queue[curr_index]
+                if len(self.queue) < self.getLChildIndex(curr_index):
+                    break
+            else:
+                if self.distances[L] < self.distances[curr_node]:
+                    self.swap(L, curr_node)
+                    curr_index = self.getLChildIndex(curr_index)
+                elif self.distances[curr_node] <= self.distances[L]:
+                    break
+                curr_node = self.queue[curr_index]
+                if len(self.queue) < self.getLChildIndex(curr_index):
+                    break
+            L = self.queue[self.getLChildIndex(curr_index)]
+            R = self.queue[self.getRChildIndex(curr_index)] if (len(self.queue) < self.getRChildIndex(curr_index)) else None
 
 
     def insert(self, node, dist):
-        self.queue.append([node, dist])
-
+        self.queue.append(node)
+        self.distances[node] = dist
+        self.indices[node] = len(self.queue) - 1
         curr_index = len(self.queue) - 1
-        while curr_index > 0:
-            parent = self.queue[((curr_index+1)//2)-1]
-            curr_node = self.queue[curr_index]
-            if curr_node[1] > parent[1]:
-                temp = parent
-                parent = curr_node
-                curr_node = temp
-                curr_index = ((curr_index+1)//2)-1
-            else:
-                break
+        self.bubbleUp(curr_index)
 
     def decrease_dist(self, node, dist):
         # if node in self.queue:
-        if dist < self.queue[node]:
-            self.queue[node] = dist
-        curr_index = len(self.queue[node]) - 1
-        while curr_index > 0:
-            parent = self.queue[((curr_index+1)//2)-1]
-            curr_node = self.queue[curr_index]
-            if curr_node[1] > parent[1]:
-                temp = parent
-                parent = curr_node
-                curr_node = temp
-                curr_index = ((curr_index+1)//2)-1
-            else:
-                break
+        if dist < self.distances[node]:
+            self.distances[node] = dist
+        # curr_index = len(self.queue) - 1
+        curr_index = self.indices[node]
+        self.bubbleUp(curr_index)
 
     def delete_min(self):
-
-        # swaps top and bottom of tree and pops off min
-        min_node = self.queue[0].pop()
-        self.queue[0], self.queue[len(self.queue) - 1] = self.queue[len(self.queue) - 1], self.queue[0]
-
-        # bubble down to correct place
-        curr_index = 0
-        L = self.queue[((curr_index + 1) * 2) - 1]
-        R = self.queue[((curr_index + 1) * 2) + 1 - 1]
-        while (self.queue[curr_index][1] >= L[1]) and (self.queue[curr_index][1] >= R[1]):
-            curr_node = self.queue[curr_index]
-            parent = self.queue[((curr_index+1)//2)-1]
-            if L[1] < curr_node[1]:
-                if L[1] < R[1]:
-                    temp = L
-                    L = curr_node
-                    curr_node = temp
-                    curr_index = ((curr_index+1)*2)-1
-            elif R[1] < curr_node[1]:
-                if L[1] > R[1]:
-                    temp = R
-                    R = curr_node
-                    curr_node = temp
-                    curr_index = ((curr_index+1)*2)+1-1
-            elif ((R and L) >= curr_node) and (parent <= curr_node):
-                break
-            L = self.queue[((curr_index+1)*2)-1]
-            R = self.queue[((curr_index+1)*2)+1-1]
+        self.swap(self.queue[0], self.queue[len(self.queue) - 1])
+        min_node = self.queue.pop(len(self.queue) - 1)
+        del self.distances[min_node]
+        del self.indices[min_node]
+        if len(self.queue) > 0:
+            self.bubbleDown()
 
         return min_node
 
     def make_queue(self, nodes):
-        self.queue = {key: float('inf') for key, _ in nodes}
+        # self.queue = {key: float('inf') for key, _ in nodes}
+        for node in nodes:
+            self.insert(node, float('inf'))
 
-
-
-
-pq = PriorityQueueArray()
+# pq = PriorityQueueArray()
 # pq.insert('A', 2)
 # pq.insert('B', 4)
 # pq.insert('C', 2)
@@ -185,6 +219,21 @@ pq = PriorityQueueArray()
 # print(f"Deleted minimum value: ({min_node})")
 # print("Updated Priority Queue:", pq.queue)
 #
-elements = [("D", 1), ("E", 8), ("F", 4)]
-pq.make_queue(elements)
-print("Priority Queue after make_queue:", pq.queue)
+# elements = [("D", 1), ("E", 8), ("F", 4)]
+# pq.make_queue(elements)
+# print("Priority Queue after make_queue:", pq.queue)
+
+pq = PriorityQueueArray()
+
+pq.make_queue(["a", "b", "c", "d"])
+# pq.insert('a',1)
+# pq.insert('b',4)
+# pq.insert('c',4)
+# pq.insert('d',3)
+# pq.insert('e',6)
+# pq.insert('f',0)
+
+pq.decrease_dist('b', .5)
+pq.delete_min()
+pq.insert('g',1)
+
