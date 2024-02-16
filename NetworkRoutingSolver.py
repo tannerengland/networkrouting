@@ -34,15 +34,14 @@ class NetworkRoutingSolver:
     def computeShortestPaths( self, srcIndex, use_heap=False ):
         self.source = srcIndex
         t1 = time.time()
-        pq = []
+        pq = None
         if use_heap:
             pq = PriorityQueueBinaryHeap
         else:
             pq = PriorityQueueArray
-        pq.make_queue()
-        Dijkstra(pq)
-
-
+        pq.make_queue(self.network.nodes)
+        srcNode = self.network.nodes[srcIndex].node_id
+        shortestPaths = Dijkstra(pq, srcNode)
 
         # TODO: RUN DIJKSTRA'S TO DETERMINE SHORTEST PATHS.
         #       ALSO, STORE THE RESULTS FOR THE SUBSEQUENT
@@ -51,35 +50,42 @@ class NetworkRoutingSolver:
         t2 = time.time()
         return (t2-t1)
 
-def Dijkstra(priorityQueue):
-
-
-
-    return
+def Dijkstra(pq, srcNode):
+    prev = {}
+    for curr in pq.keys():
+        prev[curr] = None
+    pq.decrease_dist(srcNode,0)
+    while not pq.is_empty():
+        currNode = pq.delete_min()
+        for destNode in currNode.neighbors:
+            if pq.distances.get(destNode.dest.node_id) > (pq.distances.get(currNode) + destNode.length):
+                prev[destNode.dest.node_id] = currNode
+                pq.decrease_dist(destNode.dest.node_id, (pq.distances.get(currNode) + destNode.length))
+    return pq, prev
 
 
 class PriorityQueueArray:
     def __init__(self):
-        self.queue = {}
+        self.distances = {}
 
     def insert(self, node, dist):
-        self.queue[node] = dist
+        self.distances[node] = dist
         # self.queue[node,dist]
 
     def decrease_dist(self, node, dist):
-        if node in self.queue:
-            if dist < self.queue[node]:
-                self.queue[node] = dist
-        else:
-            print("Key not found in the priority queue.")
+        if node in self.distances:
+            if dist < self.distances[node]:
+                self.distances[node] = dist
+        # else:
+        #     print("Key not found in the priority queue.")
 
     def delete_min(self):
-        if not self.queue:
-            print("Priority queue is empty.")
-            return None
+        # if not self.distances:
+        #     print("Priority queue is empty.")
+        #     return None
 
-        min_node = min(self.queue, key=self.queue.get)
-        self.queue.pop(min_node)
+        min_node = min(self.distances, key=self.distances.get)
+        self.distances.pop(min_node)
         return min_node
 
     # def make_queue(self, solver: NetworkRoutingSolver):
@@ -92,7 +98,7 @@ class PriorityQueueArray:
         # self.queue = {key: float('inf') for key, _ in nodes}
         # self.queue = dict(nodes)
         for node in nodes:
-            self.insert(node, float('inf'))
+            self.insert(node.node_id, float('inf'))
 
 class PriorityQueueBinaryHeap:
     def __init__(self):
@@ -203,7 +209,7 @@ class PriorityQueueBinaryHeap:
     def make_queue(self, nodes):
         # self.queue = {key: float('inf') for key, _ in nodes}
         for node in nodes:
-            self.insert(node, float('inf'))
+            self.insert(node.node_id, float('inf'))
 
 # pq = PriorityQueueArray()
 # pq.insert('A', 2)
