@@ -35,8 +35,10 @@ class NetworkRoutingSolver:
             # if parentIndex in self.prev and currIndex in self.prev:
             parentIndex = self.prev[currIndex]
             # path_edges.append((self.id_to_node[parentIndex].loc, self.id_to_node[currIndex].loc, '{:.0f}'.format(math.sqrt((self.id_to_node[currIndex].loc.x()-self.id_to_node[parentIndex].loc.x())**2 + (self.id_to_node[currIndex].loc.y()-self.id_to_node[parentIndex].loc.y())**2))))
-            path_edges.append((self.id_to_node[parentIndex].loc, self.id_to_node[currIndex].loc, '{:.0f}'.format(math.sqrt((self.id_to_node[currIndex].loc.x()-self.id_to_node[parentIndex].loc.x())**2 + (self.id_to_node[currIndex].loc.y()-self.id_to_node[parentIndex].loc.y())**2))))
-            total_length += self.dist[currIndex]
+            # math.sqrt((self.id_to_node[currIndex].loc.x()-self.id_to_node[parentIndex].loc.x())**2 + (self.id_to_node[currIndex].loc.y()-self.id_to_node[parentIndex].loc.y())**2)))
+            currDist = self.dist[currIndex]
+            path_edges.append((self.id_to_node[parentIndex].loc, self.id_to_node[currIndex].loc, '{:.0f}'.format(currDist)))
+            total_length += currDist
             currIndex = parentIndex
             # total_length += ((self.id_to_node[currIndex].loc.x()-self.id_to_node[parentIndex].loc.x())**2 + (self.id_to_node[currIndex].loc.y()-self.id_to_node[parentIndex].loc.y())**2)
 
@@ -74,7 +76,7 @@ class NetworkRoutingSolver:
         prev = {}
         dist = {}
         for curr in self.network.nodes:
-            dist[curr.node_id] = None
+            dist[curr.node_id] = sys.maxsize
             prev[curr.node_id] = None
         pq.decrease_dist(srcNode,0)
         dist[srcNode] = 0
@@ -83,10 +85,16 @@ class NetworkRoutingSolver:
             currNode = self.id_to_node[currIndex]
             for destNode in currNode.neighbors:
                 if destNode.dest.node_id in pq.distances:
-                    if pq.distances.get(destNode.dest.node_id) > (currDist + math.sqrt((currNode.loc.x()-destNode.dest.loc.x())**2 + (currNode.loc.y()-destNode.dest.loc.y())**2)):
+                    # if pq.distances.get(destNode.dest.node_id) > (currDist + math.sqrt((currNode.loc.x()-destNode.dest.loc.x())**2 + (currNode.loc.y()-destNode.dest.loc.y())**2)):
+                    if pq.distances.get(destNode.dest.node_id) > (currDist + destNode.length):
+
                         prev[destNode.dest.node_id] = currIndex
-                        pq.decrease_dist(destNode.dest.node_id, (currDist + math.sqrt((currNode.loc.x()-destNode.dest.loc.x())**2 + (currNode.loc.y()-destNode.dest.loc.y())**2)))
-                        dist[destNode.dest.node_id] = currDist + math.sqrt((currNode.loc.x()-destNode.dest.loc.x())**2 + (currNode.loc.y()-destNode.dest.loc.y())**2)
+                        # pq.decrease_dist(destNode.dest.node_id, (currDist + math.sqrt((currNode.loc.x()-destNode.dest.loc.x())**2 + (currNode.loc.y()-destNode.dest.loc.y())**2)))
+                        pq.decrease_dist(destNode.dest.node_id, (currDist + destNode.length))
+                        # pq.decrease_dist(destNode.dest.node_id, (destNode.length))
+
+                        # dist[destNode.dest.node_id] = (currDist + math.sqrt((currNode.loc.x()-destNode.dest.loc.x())**2 + (currNode.loc.y()-destNode.dest.loc.y())**2))
+                        dist[destNode.dest.node_id] = pq.distances[destNode.dest.node_id] - currDist
         return dist, prev
 
 
@@ -202,7 +210,7 @@ class PriorityQueueBinaryHeap:
                     # if self.distances[L] < self.distances[R]:
                         self.swap(L, curr_node)
                         curr_index = self.getLChildIndex(curr_index)
-                elif self.distances[R] < self.distances[curr_node] and (self.distances[L] > self.distances[R]):
+                elif (self.distances[R] < self.distances[curr_node]) and (self.distances[L] > self.distances[R]):
                     # if self.distances[L] > self.distances[R]:
                         self.swap(R, curr_node)
                         curr_index = self.getRChildIndex(curr_index)
